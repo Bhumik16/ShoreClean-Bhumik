@@ -159,14 +159,7 @@ function App() {
               }
             />
 
-          <Route
-            path="/certificates"
-            element={
-              <PrivateRoute>
-                <ComingSoon pageName="Certificates" />
-              </PrivateRoute>
-            }
-          />
+
           <Route
             path="/profile"
             element={

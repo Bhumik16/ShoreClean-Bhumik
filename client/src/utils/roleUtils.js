@@ -76,6 +76,7 @@ export const getNavigationItems = (user) => {
     return [
       { name: "Events", path: "/events" },
       { name: "Maps", path: "/map" },
+      { name: "Certificates", path: "/volunteer/certificates" },
       { name: "Testimonials", onClick: "scrollToTestimonials" },
       { name: "Donation", path: "/donations", isCtaButton: true },
     ];
@@ -85,6 +86,7 @@ export const getNavigationItems = (user) => {
     return [
       { name: "Events", path: "/events" },
       { name: "Maps", path: "/map" },
+      { name: "Certificates", path: "/certificates" },
       { name: "Testimonials", onClick: "scrollToTestimonials" },
       { name: "Community Chat", path: "/chat", isCtaButton: true },
     ];
