@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Menu,
   X,
-  Waves,
   LogOut,
   User,
   Calendar,
@@ -34,6 +33,19 @@ const Navbar = () => {
   const userIsVolunteer = isVolunteer(currentUser);
   const navigationItems = getNavigationItems(currentUser);
   const profilePath = getProfilePath(currentUser);
+
+  // If any nav item with query params fully matches the current URL, it takes priority.
+  // Plain-path items that share the same base path will defer to it.
+  const specificActiveItem = navigationItems.find((item) => {
+    if (!item.path) return false;
+    const [p, q] = item.path.split("?");
+    if (!q) return false;
+    const pathMatch = p === "/" ? location.pathname === "/" : location.pathname.startsWith(p);
+    if (!pathMatch) return false;
+    const itemParams = new URLSearchParams(q);
+    const currentParams = new URLSearchParams(location.search);
+    return [...itemParams.entries()].every(([k, v]) => currentParams.get(k) === v);
+  });
 
   const scrollToTestimonials = () => {
     if (location.pathname === "/") {
@@ -87,22 +99,23 @@ const Navbar = () => {
       }`}
     >
       <div
-        className={`w-screen max-w-5xl mx-auto px-8 py-3 rounded-2xl backdrop-blur-lg transition-all duration-300 ${
+        className={`w-full max-w-5xl mx-auto px-8 py-3 rounded-2xl backdrop-blur-lg transition-all duration-300 ${
           scrolled
             ? "bg-white/95 shadow-lg border border-cyan-100"
             : "bg-white/85 shadow-md border border-white/60"
         }`}
       >
-        <div className="flex items-center justify-between gap-6">
+        <div className="flex items-center justify-between gap-4 min-w-0">
           {/* Logo */}
           <Link
             to="/"
             className="flex items-center gap-2 group cursor-pointer flex-shrink-0"
           >
-            <div className="relative">
-              <Waves className="h-7 w-7 text-cyan-600 group-hover:text-cyan-700 transition-colors duration-300" />
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
-            </div>
+            <img
+              src="/shore-clean-logo.png"
+              alt="ShoreClean"
+              className="h-9 w-9 object-contain transition-transform duration-300 group-hover:scale-110"
+            />
             <span className="text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent whitespace-nowrap">
               ShoreClean
             </span>
@@ -112,12 +125,30 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
             {isAuthenticated
               ? navigationItems.map((item) => {
-                  const itemPathname = item.path?.split("?")[0];
-                  const isActive =
-                    item.path &&
-                    (itemPathname === "/"
-                      ? location.pathname === "/"
-                      : location.pathname.startsWith(itemPathname));
+                  const [itemPathname, itemQuery] = (item.path || "").split("?");
+                  const isActive = (() => {
+                    if (!item.path) return false;
+                    const pathMatch =
+                      itemPathname === "/"
+                        ? location.pathname === "/"
+                        : location.pathname.startsWith(itemPathname);
+                    if (!pathMatch) return false;
+                    // If the nav item carries query params, those must also match
+                    // (prevents "/events" and "/events?organizer=x" both being active)
+                    if (itemQuery) {
+                      const itemParams = new URLSearchParams(itemQuery);
+                      const currentParams = new URLSearchParams(location.search);
+                      return [...itemParams.entries()].every(
+                        ([k, v]) => currentParams.get(k) === v
+                      );
+                    }
+                    // Plain path item — defer if a query-specific sibling already matched
+                    if (specificActiveItem) {
+                      const [specificBase] = specificActiveItem.path.split("?");
+                      if (itemPathname === specificBase) return false;
+                    }
+                    return true;
+                  })();
                   return item.onClick ? (
                     <button
                       key={item.name}
@@ -165,7 +196,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop: account menu (single control — avatar + name + role) */}
-          <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="hidden md:flex items-center gap-2 min-w-0 shrink">
             {isAuthenticated ? (
               <div className="relative" id="user-menu-container">
                 <button
@@ -294,12 +325,28 @@ const Navbar = () => {
               {isAuthenticated ? (
                 <>
                   {navigationItems.map((item) => {
-                    const itemPathname = item.path?.split("?")[0];
-                    const active =
-                      item.path &&
-                      (itemPathname === "/"
-                        ? location.pathname === "/"
-                        : location.pathname.startsWith(itemPathname));
+                    const [itemPathname, itemQuery] = (item.path || "").split("?");
+                    const active = (() => {
+                      if (!item.path) return false;
+                      const pathMatch =
+                        itemPathname === "/"
+                          ? location.pathname === "/"
+                          : location.pathname.startsWith(itemPathname);
+                      if (!pathMatch) return false;
+                      if (itemQuery) {
+                        const itemParams = new URLSearchParams(itemQuery);
+                        const currentParams = new URLSearchParams(location.search);
+                        return [...itemParams.entries()].every(
+                          ([k, v]) => currentParams.get(k) === v
+                        );
+                      }
+                      // Plain path item — defer if a query-specific sibling already matched
+                      if (specificActiveItem) {
+                        const [specificBase] = specificActiveItem.path.split("?");
+                        if (itemPathname === specificBase) return false;
+                      }
+                      return true;
+                    })();
                     return item.onClick ? (
                       <button
                         key={item.name}
